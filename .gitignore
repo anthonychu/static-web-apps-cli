@@ -23,7 +23,6 @@ appsettings.json
 local.settings.json
 
 node_modules
-dist
 
 # Local python packages
 .python_packages/
@@ -42,7 +41,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-dist
 *.tgz
 *.orig
 cypress/videos/
