@@ -36,6 +36,11 @@ export async function initApi(context: string, options: any) {
   fse.mkdirSync(apiPath);
   fse.copySync(templatePath, apiPath);
 
+  const gitIgnorepath = path.resolve(process.cwd(), ".gitignore");
+  if (!fse.existsSync(gitIgnorepath)) {
+    fse.copyFileSync(path.resolve(__dirname, "../../templates/_gitignore"), gitIgnorepath);
+  }
+
   spawnSync("python", ["-m", "pip", "install", "-r", path.join(apiPath, "requirements.txt")], { stdio: "inherit" });
 
   logger.log(`API folder ${apiPath} created.`);
