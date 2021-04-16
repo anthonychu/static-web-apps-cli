@@ -4,6 +4,7 @@ import path from "path";
 import { DEFAULT_CONFIG } from "../../config";
 import builder from "../../core/builder";
 import { createStartupScriptCommand, isAcceptingTcpConnections, isHttpUrl, logger, parseUrl, readWorkflowFile } from "../../core";
+import { generateSwaApiFunctions } from "../../core/utils/swa-api";
 
 export async function start(startContext: string, options: SWACLIConfig) {
   // WARNING: code below doesn't have access to SWA CLI env vars which are defined later below
@@ -43,6 +44,8 @@ export async function start(startContext: string, options: SWACLIConfig) {
     // make sure api folder exists
     else if (fs.existsSync(options.apiLocation) === false) {
       logger.info(`Skipping API because folder "${options.apiLocation}" is missing.`);
+    } else {
+      options.apiLocation = generateSwaApiFunctions(options.apiLocation);
     }
   }
 

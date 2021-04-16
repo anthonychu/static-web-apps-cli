@@ -1,0 +1,2 @@
+fastapi
+git+https://github.com/anthonychu/swa-api-python.git@main

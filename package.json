@@ -1,6 +1,6 @@
 {
   "name": "@azure/static-web-apps-cli",
-  "version": "0.3.1-alpha",
+  "version": "0.3.1-pyhack.1",
   "description": "Azure Static Web Apps CLI",
   "scripts": {
     "start": "node ./dist/cli/bin.js start ./cypress/fixtures/static --api=./cypress/fixtures/api --port 1234 --verbose silly",
@@ -30,6 +30,7 @@
     "concurrently": "^6.0.0",
     "cookie": "^0.4.1",
     "finalhandler": "^1.1.2",
+    "fs-extra": "^9.1.0",
     "globalyzer": "^0.1.4",
     "globrex": "^0.1.2",
     "http-proxy": "^1.18.1",
@@ -46,9 +47,11 @@
     "@types/concurrently": "^6.0.1",
     "@types/cookie": "^0.4.0",
     "@types/finalhandler": "^1.1.0",
+    "@types/fs-extra": "^9.0.11",
     "@types/http-proxy": "^1.17.4",
     "@types/jest": "^26.0.16",
     "@types/mock-fs": "^4.13.0",
+    "@types/rimraf": "^3.0.0",
     "@types/serve-static": "^1.13.9",
     "@types/shelljs": "^0.8.8",
     "@types/wait-on": "^5.2.0",
