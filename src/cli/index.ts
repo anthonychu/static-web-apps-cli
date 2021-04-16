@@ -2,6 +2,7 @@ import program, { Option } from "commander";
 import path from "path";
 import { DEFAULT_CONFIG } from "../config";
 import { parsePort } from "../core";
+import { generateApiOutput } from "./commands/generate-api-output";
 import { initApi } from "./commands/init-api";
 import { start } from "./commands/start";
 
@@ -15,28 +16,6 @@ exports.main = async function () {
     .option("--verbose [prefix]", "enable verbose output. Values are: silly,info,log,silent", DEFAULT_CONFIG.verbose)
 
     .addHelpText("after", "\nDocumentation:\n  https://aka.ms/swa/cli-local-development\n");
-
-  program
-    .command("init-api [context]")
-    .usage("[context] [options]")
-    .description("initialize an api folder")
-    .option("--language <language>", "API language (JavaScript, Python, C#)")
-    .action(async (context: string = `.${path.sep}`, options: { language: string; verbose: any }) => {
-      options = {
-        ...options,
-        verbose: cli.opts().verbose,
-      };
-
-      // make sure the start command gets the right verbosity level
-      process.env.SWA_CLI_DEBUG = options.verbose;
-      if (options.verbose?.includes("silly")) {
-        // when silly level is set,
-        // propagate debugging level to other tools using the DEBUG environment variable
-        process.env.DEBUG = "*";
-      }
-
-      await initApi(context, options);
-    });
 
   program
     .command("start [context]")
@@ -106,6 +85,49 @@ Examples:
   swa start ./output-folder --api ./api
     `
     );
+
+  program
+    .command("init-api [context]")
+    .usage("[context] [options]")
+    .description("initialize an api folder")
+    .option("--language <language>", "API language (JavaScript, Python, C#)")
+    .action(async (context: string = `.${path.sep}`, options: { language: string; verbose: any }) => {
+      options = {
+        ...options,
+        verbose: cli.opts().verbose,
+      };
+
+      // make sure the start command gets the right verbosity level
+      process.env.SWA_CLI_DEBUG = options.verbose;
+      if (options.verbose?.includes("silly")) {
+        // when silly level is set,
+        // propagate debugging level to other tools using the DEBUG environment variable
+        process.env.DEBUG = "*";
+      }
+
+      await initApi(context, options);
+    });
+
+  program
+    .command("generate-api-output [context]")
+    .usage("[context] [options]")
+    .description("generate an api output folder")
+    .action(async (context: string = `.${path.sep}`, options: { verbose: any }) => {
+      options = {
+        ...options,
+        verbose: cli.opts().verbose,
+      };
+
+      // make sure the start command gets the right verbosity level
+      process.env.SWA_CLI_DEBUG = options.verbose;
+      if (options.verbose?.includes("silly")) {
+        // when silly level is set,
+        // propagate debugging level to other tools using the DEBUG environment variable
+        process.env.DEBUG = "*";
+      }
+
+      await generateApiOutput(context);
+    });
 
   await program.parseAsync(process.argv);
 };
