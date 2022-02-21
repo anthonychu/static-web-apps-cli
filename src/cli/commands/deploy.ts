@@ -11,6 +11,8 @@ interface DeployOptions {
 }
 
 export async function deploy(options: DeployOptions) {
+  // TODO: need to handle folders that aren't in cwd, like if options.appOutputLocation is ../../foo
+  // TODO: need to test on Windows
   const appOutputLocation = options.appOutputLocation ?? "/";
   const apiOutputLocation = options.apiOutputLocation ?? "";
   const deploymentToken = options.deploymentToken;
