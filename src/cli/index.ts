@@ -118,7 +118,7 @@ Examples:
   program
     .command("deploy")
     .usage("[appOutputLocation] [options]")
-    .description("deploy to Azure Static Web Apps - [appOutputLocation] is the location of the app build output folder.")
+    .description("deploy to Azure Static Web Apps - appOutputLocation is the location of the app build output folder.")
     .option("--api-output-location <apiOutputLocation>", "set location for the API build output")
     .option("--deployment-token <deploymentToken>", "set the deployment token")
     .action(async (options: any, command: Command) => {
