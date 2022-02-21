@@ -1,4 +1,4 @@
-import program, { Option } from "commander";
+import program, { Command, Option } from "commander";
 import path from "path";
 import { DEFAULT_CONFIG } from "../config";
 import { logger, parsePort } from "../core";
@@ -6,6 +6,7 @@ import { parseDevserverTimeout } from "../core";
 import { start } from "./commands/start";
 import updateNotifier from "update-notifier";
 import { getFileOptions, swaCliConfigFilename } from "../core/utils/cli-config";
+import { deploy } from "./commands/deploy";
 const pkg = require("../../package.json");
 
 export const defaultStartContext = `.${path.sep}`;
@@ -111,6 +112,32 @@ Examples:
 
   Use a custom command to run framework development server at startup
   swa start http://localhost:3000 --run "npm start"
+    `
+    );
+
+  program
+    .command("deploy")
+    .usage("[appOutputLocation] [options]")
+    .description("deploy to Azure Static Web Apps - [appOutputLocation] is the location of the app build output folder.")
+    .option("--api-output-location <apiOutputLocation>", "set location for the API build output")
+    .option("--deployment-token <deploymentToken>", "set the deployment token")
+    .action(async (options: any, command: Command) => {
+      // console.log("deploy", options, command);
+      const appOutputLocation = command.args.length ? command.args[0] : ".";
+      const apiOutputLocation: string = (options.apiOutputLocation as string) ?? "";
+      const deploymentToken: string = (options.deploymentToken as string) ?? "";
+      await deploy({ appOutputLocation, apiOutputLocation, deploymentToken });
+    })
+    .addHelpText(
+      "after",
+      `
+Examples:
+
+  Deploy frontend only
+  swa deploy ./frontend/dist --deployment-token <deploymentToken>
+
+  Deploy frontend and API
+  swa deploy ./frontend/dist --api-output-location ./api --deployment-token <deploymentToken>
     `
     );
 
