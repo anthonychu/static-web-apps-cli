@@ -23,6 +23,7 @@ import {
   parseUrl,
   readWorkflowFile,
 } from "../../core";
+import { getInstalledDockerVersion } from "../../core/docker";
 import { swaCLIEnv } from "../../core/env";
 import { getCertificate } from "../../core/ssl";
 let packageInfo = require("../../../package.json");
@@ -410,10 +411,16 @@ export async function start(options: SWACLIConfig) {
   }
 
   if (isDbConfigLocationExistsOnDisk) {
-    concurrentlyCommands.push(
-      // serve the api, if it's available
-      { command: serveDbCommand, name: "db ", env, prefixColor: "gray.dim" }
-    );
+    const dockerVersion = await getInstalledDockerVersion();
+    if (dockerVersion === undefined) {
+      logger.error(`\nCould not find Docker binary. Docker is required to run the data gateway.`, true);
+    } else {
+      logger.silly(`Found Docker engine v${dockerVersion}`);
+      concurrentlyCommands.push(
+        // start the data gateway, if docker is available
+        { command: serveDbCommand, name: "db ", env, prefixColor: "gray.dim" }
+      );
+    }
   }
 
   // run an external script, if it's available
