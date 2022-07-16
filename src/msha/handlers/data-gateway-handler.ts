@@ -2,7 +2,7 @@ import chalk from "chalk";
 import type http from "http";
 import httpProxy from "http-proxy";
 import { decodeCookie, logger, logRequest, registerProcessExit, validateCookie } from "../../core";
-import { HAS_API } from "../../core/constants";
+import { HAS_DB } from "../../core/constants";
 import { onConnectionLost } from "../middlewares/request.middleware";
 
 const proxyApi = httpProxy.createProxyServer({ autoRewrite: true });
@@ -55,7 +55,7 @@ function injectClientPrincipalCookies(req: http.ClientRequest) {
 
 export function handleDataGatewayRequest(req: http.IncomingMessage, res: http.ServerResponse) {
   const target = "http://localhost:5000";
-  if (HAS_API) {
+  if (HAS_DB) {
     logger.silly(`data gateway request detected. Proxying to Data Gateway emulator`);
     logger.silly(` - target: ${chalk.yellow(target)}`);
   } else {

@@ -32,9 +32,11 @@ declare interface SWACLIEnv extends StaticSiteClientEnv {
 
   // swa start
   SWA_CLI_API_PORT?: string;
+  SWA_CLI_DB_PORT?: string;
   SWA_CLI_APP_LOCATION?: string;
   SWA_CLI_OUTPUT_LOCATION?: string;
   SWA_CLI_API_LOCATION?: string;
+  SWA_CLI_DB_CONFIG_LOCATION?: string;
   SWA_CLI_HOST?: string;
   SWA_CLI_PORT?: string;
   SWA_CLI_APP_SSL?: string;
@@ -45,6 +47,7 @@ declare interface SWACLIEnv extends StaticSiteClientEnv {
   SWA_CLI_OPEN_BROWSER?: string;
   SWA_CLI_APP_DEVSERVER_URL?: string;
   SWA_CLI_API_DEVSERVER_URL?: string;
+  SWA_CLI_DB_DEVSERVER_URL?: string;
 
   // swa deploy
   SWA_CLI_DEPLOY_DRY_RUN?: string;
@@ -126,9 +129,12 @@ declare type SWACLIStartOptions = {
   appLocation?: string;
   outputLocation?: string;
   apiLocation?: string;
+  dbConfigLocation?: string;
   appDevserverUrl?: string;
   apiDevserverUrl?: string;
+  dbDevserverUrl?: string;
   apiPort?: number;
+  dbPort?: number;
   host?: string;
   port?: number;
   ssl?: boolean;

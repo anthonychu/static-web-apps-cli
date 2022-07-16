@@ -34,10 +34,25 @@ export default function registerCommand(program: Command) {
     .description("start the emulator from a directory or bind to a dev server")
     .option("-a, --app-location <path>", "the folder containing the source code of the front-end application", DEFAULT_CONFIG.appLocation)
     .option("-i, --api-location <path>", "the folder containing the source code of the API application", DEFAULT_CONFIG.apiLocation)
+    .option("-d, --db-config-location <path>", "the database configuration file", DEFAULT_CONFIG.dbConfigLocation)
     .option("-O, --output-location <path>", "the folder containing the built source of the front-end application", DEFAULT_CONFIG.outputLocation)
-    .option("-D, --app-devserver-url <url>", "connect to the app dev server at this URL instead of using output location", DEFAULT_CONFIG.appDevserverUrl)
-    .option("-is, --api-devserver-url <url>", "connect to the api server at this URL instead of using output location", DEFAULT_CONFIG.apiDevserverUrl)
+    .option(
+      "-D, --app-devserver-url <url>",
+      "connect to the app dev server at this URL instead of using output location",
+      DEFAULT_CONFIG.appDevserverUrl
+    )
+    .option(
+      "-is, --api-devserver-url <url>",
+      "connect to the api server at this URL instead of using output location",
+      DEFAULT_CONFIG.apiDevserverUrl
+    )
+    .option(
+      "-is, --db-devserver-url <url>",
+      "connect to the database gateway at this URL instead of using output location",
+      DEFAULT_CONFIG.dbDevserverUrl
+    )
     .option<number>("-j, --api-port <apiPort>", "the API server port passed to `func start`", parsePort, DEFAULT_CONFIG.apiPort)
+    .option<number>("--db-port <dbPort>", "the port used to start database gateway", parsePort, DEFAULT_CONFIG.dbPort)
     .option("-q, --host <host>", "the host address to use for the CLI dev server", DEFAULT_CONFIG.host)
     .option<number>("-p, --port <port>", "the port value to use for the CLI dev server", parsePort, DEFAULT_CONFIG.port)
 
@@ -121,10 +136,13 @@ export async function start(options: SWACLIConfig) {
   let {
     appLocation,
     apiLocation,
+    dbConfigLocation,
     outputLocation,
     appDevserverUrl,
     apiDevserverUrl,
+    dbDevserverUrl,
     apiPort,
+    dbPort,
     devserverTimeout,
     ssl,
     sslCert,
@@ -139,6 +157,7 @@ export async function start(options: SWACLIConfig) {
   } = options;
 
   let useApiDevServer: string | undefined | null = undefined;
+  let useDbDevServer: string | undefined | null = undefined;
   let startupCommand: string | undefined | null = undefined;
 
   let resolvedPortNumber = await isAcceptingTcpConnections({ host, port });
@@ -200,6 +219,25 @@ export async function start(options: SWACLIConfig) {
     }
   }
 
+  if (dbConfigLocation) {
+    // resolves to the absolute path of the apiLocation
+    let resolvedDbConfigLocation = path.resolve(dbConfigLocation);
+
+    if (dbDevserverUrl) {
+      // TODO: properly refactor this after GA to send dbDevserverUrl to the server
+      useDbDevServer = dbDevserverUrl;
+      dbConfigLocation = dbDevserverUrl;
+    }
+    // make sure database file exists
+    else if (fs.existsSync(resolvedDbConfigLocation) && fs.statSync(resolvedDbConfigLocation).isFile()) {
+      dbConfigLocation = resolvedDbConfigLocation;
+      logger.info(`Using database config file: ${dbConfigLocation}`, "swa");
+    } else {
+      logger.error(`Database configuration "${resolvedDbConfigLocation}" is missing or not a file`, true);
+    }
+  }
+
+  // TODO: add dbConfigLocation
   let userWorkflowConfig: Partial<GithubActionWorkflow> | undefined = {
     appLocation,
     outputLocation,
@@ -270,6 +308,35 @@ export async function start(options: SWACLIConfig) {
     }
   }
 
+  const isDbConfigLocationExistsOnDisk = fs.existsSync(dbConfigLocation!);
+
+  let serveDbCommand = "echo 'No database config found. Skipping'";
+
+  if (useDbDevServer) {
+    serveDbCommand = `echo 'using database gateway at ${useDbDevServer}'`;
+
+    // get the port from the database gateway server
+    dbPort = parseUrl(useDbDevServer)?.port;
+  } else {
+    if (dbConfigLocation) {
+      // check if the func binary is globally available and if not, download it
+      const dockerBinary = "/usr/local/bin/docker";
+
+      if (!dockerBinary) {
+        // prettier-ignore
+        logger.error(
+          `\nCould not find Docker binary. Docker is required to run the data gateway.`,
+          true
+        );
+      } else {
+        // serve the database if and only if the user provides a folder via the --db-config-file flag
+        if (isDbConfigLocationExistsOnDisk) {
+          serveDbCommand = `${dockerBinary} run --rm -p ${dbPort}:5000 -v ${dbConfigLocation}:/App/hawaii-config.json hawaii-engine`;
+        }
+      }
+    }
+  }
+
   if (ssl) {
     if (sslCert === undefined && sslKey === undefined) {
       logger.warn(`WARNING: Using built-in UNSIGNED certificate. DO NOT USE IN PRODUCTION!`);
@@ -306,9 +373,11 @@ export async function start(options: SWACLIConfig) {
     SWA_RUNTIME_WORKFLOW_LOCATION: userWorkflowConfig?.files?.[0] as string,
     SWA_CLI_DEBUG: verbose as DebugFilterLevel,
     SWA_CLI_API_PORT: `${apiPort}`,
+    SWA_CLI_DB_PORT: `${dbPort}`,
     SWA_CLI_APP_LOCATION: userWorkflowConfig?.appLocation as string,
     SWA_CLI_OUTPUT_LOCATION: userWorkflowConfig?.outputLocation as string,
     SWA_CLI_API_LOCATION: userWorkflowConfig?.apiLocation as string,
+    SWA_CLI_DB_CONFIG_LOCATION: dbConfigLocation as string,
     SWA_CLI_HOST: `${host}`,
     SWA_CLI_PORT: `${port}`,
     SWA_CLI_APP_SSL: ssl ? "true" : "false",
@@ -342,6 +411,13 @@ export async function start(options: SWACLIConfig) {
     );
   }
 
+  if (isDbConfigLocationExistsOnDisk) {
+    concurrentlyCommands.push(
+      // serve the api, if it's available
+      { command: serveDbCommand, name: "db ", env, prefixColor: "gray.dim" }
+    );
+  }
+
   // run an external script, if it's available
   if (startupCommand) {
     let startupPath = userWorkflowConfig?.appLocation;
@@ -356,6 +432,7 @@ export async function start(options: SWACLIConfig) {
     commands: {
       swa: concurrentlyCommands.find((c) => c.name === "swa")?.command,
       api: concurrentlyCommands.find((c) => c.name === "api")?.command,
+      db: concurrentlyCommands.find((c) => c.name === "db ")?.command,
       run: concurrentlyCommands.find((c) => c.name === "run")?.command,
     },
   });
@@ -382,11 +459,14 @@ export async function start(options: SWACLIConfig) {
           case "api":
             commandMessage = `API server exited with code ${exitCode}`;
             break;
+          case "db ":
+            commandMessage = `data gateway exited with code ${exitCode}`;
+            break;
           case "run":
             commandMessage = `the --run command exited with code ${exitCode}`;
             break;
         }
-        logger.error(`SWA emulator stoped because ${commandMessage}.`, true);
+        logger.error(`SWA emulator stopped because ${commandMessage}.`, true);
       }
     )
     .catch((err) => {

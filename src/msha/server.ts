@@ -8,7 +8,16 @@ import net from "net";
 import open from "open";
 import { DEFAULT_CONFIG } from "../config";
 import { address, hostnameToIpAdress, isHttpUrl, logger, logRequest, registerProcessExit, validateDevServerConfig } from "../core";
-import { HAS_API, IS_API_DEV_SERVER, IS_APP_DEV_SERVER, SWA_CLI_API_URI, SWA_CLI_APP_PROTOCOL } from "../core/constants";
+import {
+  HAS_API,
+  IS_API_DEV_SERVER,
+  HAS_DB,
+  IS_DB_DEV_SERVER,
+  IS_APP_DEV_SERVER,
+  SWA_CLI_API_URI,
+  SWA_CLI_DB_URI,
+  SWA_CLI_APP_PROTOCOL,
+} from "../core/constants";
 import { swaCLIEnv } from "../core/env";
 import { validateFunctionTriggers } from "./handlers/function.handler";
 import { handleUserConfig, onConnectionLost, requestMiddleware } from "./middlewares/request.middleware";
@@ -18,7 +27,11 @@ const { SWA_CLI_PORT } = swaCLIEnv();
 const proxyApp = httpProxy.createProxyServer({ autoRewrite: true });
 
 if (!isHttpUrl(SWA_CLI_API_URI())) {
-  logger.error(`The provided API URI ${SWA_CLI_API_URI} is not a valid. Exiting.`, true);
+  logger.error(`The provided API URI ${SWA_CLI_API_URI()} is not a valid. Exiting.`, true);
+}
+
+if (!isHttpUrl(SWA_CLI_DB_URI())) {
+  logger.error(`The provided API URI ${SWA_CLI_DB_URI()} is not a valid. Exiting.`, true);
 }
 
 // TODO: handle multiple workflow files (see #32)
@@ -98,6 +111,22 @@ function onServerStart(server: https.Server | http.Server, socketConnection: net
       }
     }
 
+    if (DEFAULT_CONFIG.dbConfigLocation) {
+      if (IS_DB_DEV_SERVER()) {
+        // prettier-ignore
+        logger.log(
+          `\nUsing data gateway:\n` +
+          `  ${chalk.green(DEFAULT_CONFIG.dbConfigLocation)}`
+        );
+      } else {
+        // prettier-ignore
+        logger.log(
+          `\nServing data gateway:\n` +
+          `  ${chalk.green(DEFAULT_CONFIG.dbConfigLocation)}`
+        );
+      }
+    }
+
     // note: this string must not change. It is used by the VS Code extension.
     // see: https://github.com/Azure/static-web-apps-cli/issues/124
     //--------------------------------------------------------------------------------
@@ -147,6 +176,10 @@ function onServerStart(server: https.Server | http.Server, socketConnection: net
   if (HAS_API) {
     await validateDevServerConfig(SWA_CLI_API_URI() as string, DEFAULT_CONFIG.devserverTimeout);
     await validateFunctionTriggers(SWA_CLI_API_URI() as string);
+  }
+
+  if (HAS_DB) {
+    await validateDevServerConfig(SWA_CLI_DB_URI() as string, DEFAULT_CONFIG.devserverTimeout);
   }
 
   const server = createServer();

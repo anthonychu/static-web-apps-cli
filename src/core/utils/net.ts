@@ -35,6 +35,7 @@ export async function isAcceptingTcpConnections({ host, port }: { host?: string;
       .once("connect", async () => {
         resolve(0);
         socket.end();
+        logger.silly(`${host}:${port} is accepting TCP connections.`);
       });
   });
 }
@@ -104,6 +105,8 @@ export async function validateDevServerConfig(url: string | undefined, timeout: 
         spinner.fail();
         logger.error(`Could not connect to "${url}". Is the server up and running?`, true);
       }
+    } else {
+      logger.info(`Port ${port} is accepting connections.`, "swa");
     }
   } catch (err) {
     if ((err as any).message.includes("EACCES")) {
