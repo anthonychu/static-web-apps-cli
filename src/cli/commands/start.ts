@@ -47,7 +47,7 @@ export default function registerCommand(program: Command) {
       DEFAULT_CONFIG.apiDevserverUrl
     )
     .option(
-      "-is, --db-devserver-url <url>",
+      "-id, --db-devserver-url <url>",
       "connect to the database gateway at this URL instead of using output location",
       DEFAULT_CONFIG.dbDevserverUrl
     )
@@ -223,18 +223,17 @@ export async function start(options: SWACLIConfig) {
     // resolves to the absolute path of the apiLocation
     let resolvedDbConfigLocation = path.resolve(dbConfigLocation);
 
-    if (dbDevserverUrl) {
-      // TODO: properly refactor this after GA to send dbDevserverUrl to the server
-      useDbDevServer = dbDevserverUrl;
-      dbConfigLocation = dbDevserverUrl;
-    }
     // make sure database file exists
-    else if (fs.existsSync(resolvedDbConfigLocation) && fs.statSync(resolvedDbConfigLocation).isFile()) {
+    if (fs.existsSync(resolvedDbConfigLocation) && fs.statSync(resolvedDbConfigLocation).isFile()) {
       dbConfigLocation = resolvedDbConfigLocation;
       logger.info(`Using database config file: ${dbConfigLocation}`, "swa");
     } else {
       logger.error(`Database configuration "${resolvedDbConfigLocation}" is missing or not a file`, true);
     }
+  } else if (dbDevserverUrl) {
+    // TODO: properly refactor this after GA to send dbDevserverUrl to the server
+    useDbDevServer = dbDevserverUrl;
+    dbConfigLocation = dbDevserverUrl;
   }
 
   // TODO: add dbConfigLocation
@@ -388,7 +387,6 @@ export async function start(options: SWACLIConfig) {
     SWA_CLI_SERVER_TIMEOUT: `${devserverTimeout}`,
     SWA_CLI_OPEN_BROWSER: open ? "true" : "false",
   };
-
   // merge SWA CLI env variables with process.env
   process.env = {
     ...swaCLIEnv(envVarsObj),

@@ -110,7 +110,6 @@ function onServerStart(server: https.Server | http.Server, socketConnection: net
         );
       }
     }
-
     if (DEFAULT_CONFIG.dbConfigLocation) {
       if (IS_DB_DEV_SERVER()) {
         // prettier-ignore
