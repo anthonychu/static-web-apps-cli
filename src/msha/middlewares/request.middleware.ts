@@ -12,6 +12,7 @@ import { AUTH_STATUS, CUSTOM_URL_SCHEME, IS_APP_DEV_SERVER, SWA_PUBLIC_DIR } fro
 import { getAuthBlockResponse, handleAuthRequest, isAuthRequest, isLoginRequest, isLogoutRequest } from "../handlers/auth.handler";
 import { handleErrorPage } from "../handlers/error-page.handler";
 import { isFunctionRequest } from "../handlers/function.handler";
+import { isDataGatewayRequest } from "../handlers/data-gateway-handler";
 import { isRequestMethodValid, isRouteRequiringUserRolesCheck, tryGetMatchingRoute } from "../routes-engine";
 import { isCustomUrl, parseQueryParams } from "../routes-engine/route-processor";
 import { getResponse } from "./response.middleware";
@@ -244,7 +245,13 @@ export async function requestMiddleware(
     logger.silly(` - not a function request`);
   }
 
-  if (!isRequestMethodValid(req, isFunctionReq, isAuthReq)) {
+  logger.silly(`checking data gateway request`);
+  const isDataGatewayReq = isDataGatewayRequest(req, matchingRouteRule?.rewrite);
+  if (!isDataGatewayReq) {
+    logger.silly(` - not a data gateway request`);
+  }
+
+  if (!isRequestMethodValid(req, isFunctionReq || isDataGatewayReq, isAuthReq)) {
     res.statusCode = 405;
     return res.end();
   }
@@ -271,7 +278,7 @@ export async function requestMiddleware(
     return await handleAuthRequest(req, res, matchingRouteRule, userConfig);
   }
 
-  if (!isRouteRequiringUserRolesCheck(req, matchingRouteRule, isFunctionReq, authStatus)) {
+  if (!isRouteRequiringUserRolesCheck(req, matchingRouteRule, isFunctionReq || isDataGatewayReq, authStatus)) {
     handleErrorPage(req, res, 401, userConfig?.responseOverrides);
     return serveStaticOrProxyResponse(req, res, proxyApp, target);
   }
@@ -284,7 +291,7 @@ export async function requestMiddleware(
     return await handleAuthRequest(req, res, matchingRouteRule, userConfig);
   }
 
-  if (!getResponse(req, res, matchingRouteRule, userConfig, isFunctionReq)) {
+  if (!getResponse(req, res, matchingRouteRule, userConfig, isFunctionReq, isDataGatewayReq)) {
     logger.silly(` - url: ${chalk.yellow(req.url)}`);
     logger.silly(` - target: ${chalk.yellow(target)}`);
 

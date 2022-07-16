@@ -4,6 +4,7 @@ import { isHttpUrl, isSWAConfigFileUrl, logger } from "../../core";
 import { IS_APP_DEV_SERVER } from "../../core/constants";
 import { handleErrorPage } from "../handlers/error-page.handler";
 import { handleFunctionRequest, isFunctionRequest } from "../handlers/function.handler";
+import { handleDataGatewayRequest } from "../handlers/data-gateway-handler";
 import {
   applyRedirectResponse,
   getHeadersForRoute,
@@ -19,7 +20,8 @@ export function getResponse(
   res: http.ServerResponse,
   matchedRoute: SWAConfigFileRoute | undefined,
   userConfig: SWAConfigFile | undefined,
-  isFunctionRequest: boolean
+  isFunctionRequest: boolean,
+  isDataGatewayRequest: boolean
 ): boolean {
   const statusCodeToServe = parseInt(`${matchedRoute?.statusCode}`, 10);
   const redirect = matchedRoute?.redirect;
@@ -51,6 +53,11 @@ export function getResponse(
     return true;
   }
 
+  if (isDataGatewayRequest) {
+    handleDataGatewayRequest(req, res);
+    return true;
+  }
+
   const storageResult = getStorageContent(
     req,
     res,
@@ -63,6 +70,7 @@ export function getResponse(
     userConfig?.globalHeaders
   );
 
+  // TODO: do this for data gateway too
   if (storageResult.isFunctionFallbackRequest) {
     req.url = userConfig?.navigationFallback.rewrite!;
     handleFunctionRequest(req, res);
