@@ -2,9 +2,11 @@ import chalk from "chalk";
 import { Command } from "commander";
 import concurrently, { CloseEvent } from "concurrently";
 import { CommandInfo } from "concurrently/dist/src/command";
+import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
 import { DEFAULT_CONFIG } from "../../config";
+import { startDevTunnel } from "../../core/devtunnel";
 import {
   askNewPort,
   configureOptions,
@@ -35,8 +37,16 @@ export default function registerCommand(program: Command) {
     .option("-a, --app-location <path>", "the folder containing the source code of the front-end application", DEFAULT_CONFIG.appLocation)
     .option("-i, --api-location <path>", "the folder containing the source code of the API application", DEFAULT_CONFIG.apiLocation)
     .option("-O, --output-location <path>", "the folder containing the built source of the front-end application", DEFAULT_CONFIG.outputLocation)
-    .option("-D, --app-devserver-url <url>", "connect to the app dev server at this URL instead of using output location", DEFAULT_CONFIG.appDevserverUrl)
-    .option("-is, --api-devserver-url <url>", "connect to the api server at this URL instead of using output location", DEFAULT_CONFIG.apiDevserverUrl)
+    .option(
+      "-D, --app-devserver-url <url>",
+      "connect to the app dev server at this URL instead of using output location",
+      DEFAULT_CONFIG.appDevserverUrl
+    )
+    .option(
+      "-is, --api-devserver-url <url>",
+      "connect to the api server at this URL instead of using output location",
+      DEFAULT_CONFIG.apiDevserverUrl
+    )
     .option<number>("-j, --api-port <apiPort>", "the API server port passed to `func start`", parsePort, DEFAULT_CONFIG.apiPort)
     .option("-q, --host <host>", "the host address to use for the CLI dev server", DEFAULT_CONFIG.host)
     .option<number>("-p, --port <port>", "the port value to use for the CLI dev server", parsePort, DEFAULT_CONFIG.port)
@@ -57,6 +67,7 @@ export default function registerCommand(program: Command) {
       DEFAULT_CONFIG.swaConfigLocation
     )
     .option("-o, --open", "open the browser to the dev server", DEFAULT_CONFIG.open)
+    .option("--devtunnel", "open a dev tunnel and expose an external endpoint", DEFAULT_CONFIG.devtunnel)
     .option("-f, --func-args <funcArgs>", "pass additional arguments to the func start command")
     .action(async (positionalArg: string | undefined, _options: SWACLIConfig, command: Command) => {
       const options = await configureOptions(positionalArg, command.optsWithGlobals(), command, "start");
@@ -136,6 +147,7 @@ export async function start(options: SWACLIConfig) {
     funcArgs,
     swaConfigLocation,
     verbose,
+    devtunnel: useDevTunnel,
   } = options;
 
   let useApiDevServer: string | undefined | null = undefined;
@@ -330,6 +342,13 @@ export async function start(options: SWACLIConfig) {
   // INFO: from here, code may access SWA CLI env vars.
 
   const env = swaCLIEnv();
+
+  const pathHash = createHash("md5").update(process.cwd()).digest("hex").slice(0, 8);
+  let devTunnelName = "swa-cli-" + pathHash;
+  if (useDevTunnel) {
+    env.SWA_DEV_TUNNEL_URL = await startDevTunnel(devTunnelName, port);
+  }
+
   const concurrentlyCommands: CommandInfo[] = [
     // start the reverse proxy
     { command: `node "${path.join(__dirname, "..", "..", "msha", "server.js")}"`, name: "swa", env, prefixColor: "gray.dim" },

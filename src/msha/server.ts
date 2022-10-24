@@ -107,7 +107,7 @@ function onServerStart(server: https.Server | http.Server, socketConnection: net
     // note: this string must not change. It is used by the VS Code extension.
     // see: https://github.com/Azure/static-web-apps-cli/issues/124
     //--------------------------------------------------------------------------------
-    const serverAddress = address(DEFAULT_CONFIG.host, Number(SWA_CLI_PORT), SWA_CLI_APP_PROTOCOL);
+    const serverAddress = DEFAULT_CONFIG.devTunnelUrl ?? address(DEFAULT_CONFIG.host, Number(SWA_CLI_PORT), SWA_CLI_APP_PROTOCOL);
     let logMessage = `\nAzure Static Web Apps emulator started at ${chalk.green(serverAddress)}. Press CTRL+C to exit.\n\n`;
     //--------------------------------------------------------------------------------
 
