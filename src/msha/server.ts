@@ -110,18 +110,18 @@ function onServerStart(server: https.Server | http.Server, socketConnection: net
         );
       }
     }
-    if (DEFAULT_CONFIG.dbConfigLocation) {
+    if (DEFAULT_CONFIG.dbConfigFile) {
       if (IS_DB_DEV_SERVER()) {
         // prettier-ignore
         logger.log(
           `\nUsing data gateway:\n` +
-          `  ${chalk.green(DEFAULT_CONFIG.dbConfigLocation)}`
+          `  ${chalk.green(DEFAULT_CONFIG.dbConfigFile)}`
         );
       } else {
         // prettier-ignore
         logger.log(
           `\nServing data gateway:\n` +
-          `  ${chalk.green(DEFAULT_CONFIG.dbConfigLocation)}`
+          `  ${chalk.green(DEFAULT_CONFIG.dbConfigFile)}`
         );
       }
     }

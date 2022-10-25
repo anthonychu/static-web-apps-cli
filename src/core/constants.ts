@@ -175,7 +175,7 @@ export const GIT_IGNORE_FILENAME = ".gitignore";
 export const SWA_CLI_APP_PROTOCOL = DEFAULT_CONFIG.ssl ? `https` : `http`;
 export const SWA_PUBLIC_DIR = path.resolve(__dirname, "..", "public"); //SWA_PUBLIC_DIR = "../public"
 export const HAS_API = Boolean(DEFAULT_CONFIG.apiLocation && SWA_CLI_API_URI());
-export const HAS_DB = Boolean(DEFAULT_CONFIG.dbConfigLocation && SWA_CLI_DB_URI());
+export const HAS_DB = Boolean(DEFAULT_CONFIG.dbConfigFile && SWA_CLI_DB_URI());
 export const SWA_CONFIG_FILENAME = "staticwebapp.config.json";
 export const SWA_CONFIG_FILENAME_LEGACY = "routes.json";
 export const CUSTOM_URL_SCHEME = "swa://";
@@ -195,8 +195,8 @@ export function SWA_CLI_API_URI() {
   return IS_API_DEV_SERVER() ? DEFAULT_CONFIG.apiLocation : address(DEFAULT_CONFIG.host, DEFAULT_CONFIG.apiPort);
 }
 export function IS_DB_DEV_SERVER() {
-  return isHttpUrl(DEFAULT_CONFIG.dbConfigLocation);
+  return isHttpUrl(DEFAULT_CONFIG.dbConfigFile);
 }
 export function SWA_CLI_DB_URI() {
-  return IS_DB_DEV_SERVER() ? DEFAULT_CONFIG.dbConfigLocation : address(DEFAULT_CONFIG.host, DEFAULT_CONFIG.dbPort);
+  return IS_DB_DEV_SERVER() ? DEFAULT_CONFIG.dbConfigFile : address(DEFAULT_CONFIG.host, DEFAULT_CONFIG.dbPort);
 }

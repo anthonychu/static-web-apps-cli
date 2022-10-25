@@ -35,7 +35,7 @@ export default function registerCommand(program: Command) {
     .description("start the emulator from a directory or bind to a dev server")
     .option("-a, --app-location <path>", "the folder containing the source code of the front-end application", DEFAULT_CONFIG.appLocation)
     .option("-i, --api-location <path>", "the folder containing the source code of the API application", DEFAULT_CONFIG.apiLocation)
-    .option("-d, --db-config-location <path>", "the database configuration file", DEFAULT_CONFIG.dbConfigLocation)
+    .option("-d, --db-config-file <path>", "the database configuration file", DEFAULT_CONFIG.dbConfigFile)
     .option("-O, --output-location <path>", "the folder containing the built source of the front-end application", DEFAULT_CONFIG.outputLocation)
     .option(
       "-D, --app-devserver-url <url>",
@@ -137,7 +137,7 @@ export async function start(options: SWACLIConfig) {
   let {
     appLocation,
     apiLocation,
-    dbConfigLocation,
+    dbConfigFile,
     outputLocation,
     appDevserverUrl,
     apiDevserverUrl,
@@ -220,24 +220,24 @@ export async function start(options: SWACLIConfig) {
     }
   }
 
-  if (dbConfigLocation) {
+  if (dbConfigFile) {
     // resolves to the absolute path of the apiLocation
-    let resolvedDbConfigLocation = path.resolve(dbConfigLocation);
+    let resolvedDbConfigFile = path.resolve(dbConfigFile);
 
     // make sure database file exists
-    if (fs.existsSync(resolvedDbConfigLocation) && fs.statSync(resolvedDbConfigLocation).isFile()) {
-      dbConfigLocation = resolvedDbConfigLocation;
-      logger.info(`Using database config file: ${dbConfigLocation}`, "swa");
+    if (fs.existsSync(resolvedDbConfigFile) && fs.statSync(resolvedDbConfigFile).isFile()) {
+      dbConfigFile = resolvedDbConfigFile;
+      logger.info(`Using database config file: ${dbConfigFile}`, "swa");
     } else {
-      logger.error(`Database configuration "${resolvedDbConfigLocation}" is missing or not a file`, true);
+      logger.error(`Database configuration "${resolvedDbConfigFile}" is missing or not a file`, true);
     }
   } else if (dbDevserverUrl) {
     // TODO: properly refactor this after GA to send dbDevserverUrl to the server
     useDbDevServer = dbDevserverUrl;
-    dbConfigLocation = dbDevserverUrl;
+    dbConfigFile = dbDevserverUrl;
   }
 
-  // TODO: add dbConfigLocation
+  // TODO: add dbConfigFile
   let userWorkflowConfig: Partial<GithubActionWorkflow> | undefined = {
     appLocation,
     outputLocation,
@@ -308,7 +308,7 @@ export async function start(options: SWACLIConfig) {
     }
   }
 
-  const isDbConfigLocationExistsOnDisk = fs.existsSync(dbConfigLocation!);
+  const isDbConfigFileExistsOnDisk = fs.existsSync(dbConfigFile!);
 
   let serveDbCommand = "echo 'No database config found. Skipping'";
 
@@ -318,7 +318,7 @@ export async function start(options: SWACLIConfig) {
     // get the port from the database gateway server
     dbPort = parseUrl(useDbDevServer)?.port;
   } else {
-    if (dbConfigLocation) {
+    if (dbConfigFile) {
       // check if the func binary is globally available and if not, download it
       const dockerBinary = "/usr/local/bin/docker";
 
@@ -330,8 +330,8 @@ export async function start(options: SWACLIConfig) {
         );
       } else {
         // serve the database if and only if the user provides a folder via the --db-config-file flag
-        if (isDbConfigLocationExistsOnDisk) {
-          serveDbCommand = `${dockerBinary} run --rm -p ${dbPort}:5000 -v ${dbConfigLocation}:/App/hawaii-config.json hawaii-engine`;
+        if (isDbConfigFileExistsOnDisk) {
+          serveDbCommand = `${dockerBinary} run --rm -p ${dbPort}:5000 -v ${dbConfigFile}:/App/hawaii-config.json hawaii-engine`;
         }
       }
     }
@@ -377,7 +377,7 @@ export async function start(options: SWACLIConfig) {
     SWA_CLI_APP_LOCATION: userWorkflowConfig?.appLocation as string,
     SWA_CLI_OUTPUT_LOCATION: userWorkflowConfig?.outputLocation as string,
     SWA_CLI_API_LOCATION: userWorkflowConfig?.apiLocation as string,
-    SWA_CLI_DB_CONFIG_LOCATION: dbConfigLocation as string,
+    SWA_CLI_DB_CONFIG_LOCATION: dbConfigFile as string,
     SWA_CLI_HOST: `${host}`,
     SWA_CLI_PORT: `${port}`,
     SWA_CLI_APP_SSL: ssl ? "true" : "false",
@@ -410,7 +410,7 @@ export async function start(options: SWACLIConfig) {
     );
   }
 
-  if (isDbConfigLocationExistsOnDisk) {
+  if (isDbConfigFileExistsOnDisk) {
     const dockerVersion = await getInstalledDockerVersion();
     if (dockerVersion === undefined) {
       logger.error(`\nCould not find Docker binary. Docker is required to run the data gateway.`, true);

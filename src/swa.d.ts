@@ -129,7 +129,7 @@ declare type SWACLIStartOptions = {
   appLocation?: string;
   outputLocation?: string;
   apiLocation?: string;
-  dbConfigLocation?: string;
+  dbConfigFile?: string;
   appDevserverUrl?: string;
   apiDevserverUrl?: string;
   dbDevserverUrl?: string;

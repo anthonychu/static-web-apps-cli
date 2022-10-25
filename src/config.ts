@@ -44,7 +44,7 @@ export const DEFAULT_CONFIG: SWACLIConfig = {
   dbPort: parseInt(SWA_CLI_DB_PORT || "5000", 10),
   appLocation: SWA_CLI_APP_LOCATION || `.`,
   apiLocation: SWA_CLI_API_LOCATION ? SWA_CLI_API_LOCATION : undefined,
-  dbConfigLocation: SWA_CLI_DB_CONFIG_LOCATION ? SWA_CLI_DB_CONFIG_LOCATION : undefined,
+  dbConfigFile: SWA_CLI_DB_CONFIG_LOCATION ? SWA_CLI_DB_CONFIG_LOCATION : undefined,
   outputLocation: SWA_CLI_OUTPUT_LOCATION || `.`,
   swaConfigLocation: SWA_RUNTIME_CONFIG_LOCATION || undefined,
   ssl: useEnvVarOrUseDefault(SWA_CLI_APP_SSL, false),
